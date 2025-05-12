@@ -35,15 +35,7 @@ android.debug = True
 
 log_level = 2
 
-# Point to manually installed SDK and NDK
 android.sdk_path = /home/runner/android-sdk
 android.ndk_path = /home/runner/android-sdk/ndk/23.1.7779620
-
-# Accept licenses automatically
 android.accept_sdk_license = True
-
-# Disable recipe override
 p4a.local_recipes = False
-
-# Optional Java home if needed
-#java.home = /usr/lib/jvm/java-17-temurin
