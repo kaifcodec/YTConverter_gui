@@ -14,27 +14,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up Java 17
+        uses: actions/setup-java@v3
         with:
-          python-version: "3.10"
+          distribution: temurin
+          java-version: '17'
 
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y build-essential git zip unzip openjdk-17-jdk python3-pip
-          pip install --upgrade pip setuptools Cython virtualenv
-          pip install buildozer
+      - name: Set up Android SDK (API 31 & Build-Tools 33.0.2)
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 31
+          build-tools: '33.0.2'
 
-      - name: Accept Android SDK Licenses
-        run: yes | sdkmanager --licenses || true
-      - name: Preinstall SDK Build Tools 33.0.2
+      - name: Accept all Android SDK licenses
         run: |
-          mkdir -p ~/.android
-          touch ~/.android/repositories.cfg
-          yes | sdkmanager --licenses || true
-          yes | sdkmanager "platform-tools" "platforms;android-31" "build-tools;33.0.2"
+          mkdir -p $HOME/.android
+          touch $HOME/.android/repositories.cfg
+          yes | sdkmanager --licenses
+
+      - name: Install system deps & Buildozer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential git zip unzip python3-pip
+          pip3 install --upgrade pip setuptools Cython virtualenv buildozer
+
       - name: Build APK
         run: |
           buildozer android debug
- 
