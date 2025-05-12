@@ -31,17 +31,17 @@ jobs:
           mkdir -p $HOME/android-sdk/cmdline-tools
           cd $HOME/android-sdk/cmdline-tools
           curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-          unzip sdk.zip -d latest
+          unzip sdk.zip -d temp
+          mv temp/cmdline-tools latest  # <-- This is the magic fix
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
 
-          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
-          sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
+          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
             "platform-tools" \
             "platforms;android-31" \
             "build-tools;33.0.2" \
             "ndk;23.1.7779620"
-
       - name: Build APK
         env:
           ANDROID_SDK_ROOT: $HOME/android-sdk
