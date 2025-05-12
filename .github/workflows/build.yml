@@ -1,59 +1,20 @@
-name: Build APK
-
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install Buildozer
-        run: |
-          python -m pip install --upgrade pip
-          pip install --user buildozer cython
-
-      - name: Set up Android SDK
-        run: |
-          echo "Setting up Android SDK"
-          
-          # Set SDK root
-          export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
-          
-          # Download cmdline-tools if they don't exist
-          if [ ! -d "$ANDROID_SDK_ROOT/cmdline-tools" ]; then
-            echo "Downloading cmdline-tools..."
-            wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip -P /tmp
-            unzip /tmp/commandlinetools-linux-8512546_latest.zip -d $ANDROID_SDK_ROOT
-          fi
-
-          # Set the path correctly to cmdline-tools/bin
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
-
-          # Accept licenses for SDK tools
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
-
-          # Install the necessary SDK packages
-          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;33.0.2"
-
+      - uses: actions/checkout@v4
       - name: Build APK
-        run: |
-          export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/build-tools/33.0.2:$PATH
-          buildozer android debug
+        uses: digreatbrian/buildozer-action@v2
+        with:
+          python-version: 3.8
+          buildozer-cmd: buildozer -v android debug
 
-      - name: Upload APK
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: my-app
-          path: bin/*.apk
+          name: package
+          path: ./bin/*.apk
