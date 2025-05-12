@@ -14,17 +14,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Java 17
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Set up Java
         uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: '17'
-
-      - name: Install system deps & Buildozer
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential git zip unzip python3-pip openjdk-17-jdk
-          pip3 install --upgrade pip setuptools Cython virtualenv buildozer
 
       - name: Install Android SDK manually and accept licenses
         run: |
@@ -32,7 +31,8 @@ jobs:
           cd $HOME/android-sdk/cmdline-tools
           curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           unzip sdk.zip -d temp
-          mv temp/cmdline-tools latest  # <-- This is the magic fix
+          mv temp/cmdline-tools latest
+
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
 
@@ -42,8 +42,22 @@ jobs:
             "platforms;android-31" \
             "build-tools;33.0.2" \
             "ndk;23.1.7779620"
+
+      - name: Install system deps & Buildozer
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential zip unzip git python3-pip
+          pip install --upgrade pip
+          pip install buildozer Cython virtualenv
+
+      - name: Patch buildozer.spec for custom SDK
+        run: |
+          sed -i '/^# *android.sdk_path/d' buildozer.spec
+          sed -i '/^# *android.ndk_path/d' buildozer.spec
+          echo "android.sdk_path = /home/runner/android-sdk" >> buildozer.spec
+          echo "android.ndk_path = /home/runner/android-sdk/ndk/23.1.7779620" >> buildozer.spec
+          echo "android.accept_sdk_license = True" >> buildozer.spec
+
       - name: Build APK
-        env:
-          ANDROID_SDK_ROOT: $HOME/android-sdk
-          ANDROID_NDK_HOME: $HOME/android-sdk/ndk/23.1.7779620
-        run: buildozer android debug 
+        run: |
+          buildozer android debug
