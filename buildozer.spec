@@ -1,4 +1,4 @@
-[app]
+[app] 
 
 title = YTConverter
 version = 1.0.0
