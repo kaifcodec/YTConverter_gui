@@ -9,7 +9,7 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.popup import Popup
 from android.storage import primary_external_storage_path
-from jnius import autoclass
+from jnius import autoclass, cast
 
 
 class YTDownloader(BoxLayout):
@@ -35,10 +35,12 @@ class YTDownloader(BoxLayout):
         self.status = Label(text="Status: Idle")
         self.add_widget(self.status)
 
-        self.app_dir = App.get_running_app().user_data_dir
-        self.ffmpeg_path = os.path.join(self.app_dir, 'ffmpeg')
-        self.ytdlp_path = os.path.join(self.app_dir, 'yt-dlp')
-        self.log_path = os.path.join(self.app_dir, 'ytconverter_debug.log')
+        # Use code_cache directory
+        self.app_context = autoclass('org.kivy.android.PythonActivity').mActivity.getApplicationContext()
+        self.code_cache_dir = self.app_context.getCodeCacheDir().getAbsolutePath()
+        self.ffmpeg_path = os.path.join(self.code_cache_dir, 'ffmpeg')
+        self.ytdlp_path = os.path.join(self.code_cache_dir, 'yt-dlp')
+        self.log_path = os.path.join(self.code_cache_dir, 'ytconverter_debug.log')
 
         self.setup_binaries()
 
@@ -79,6 +81,12 @@ class YTDownloader(BoxLayout):
             self.status.text = "Status: Exception during setup"
             self.log_error("setup_binaries", e)
 
+    def ensure_binaries(self):
+        if not os.path.exists(self.ffmpeg_path):
+            self.extract_asset('ffmpeg', self.ffmpeg_path)
+        if not os.path.exists(self.ytdlp_path):
+            self.extract_asset('yt-dlp', self.ytdlp_path)
+
     def get_download_path(self):
         return os.path.join(primary_external_storage_path(), 'Download')
 
@@ -112,27 +120,22 @@ class YTDownloader(BoxLayout):
             self.status.text = "Status: Please enter a URL."
             return
 
+        # Ensure binaries before each download
+        self.ensure_binaries()
+
         self.status.text = f"Status: Downloading {format.upper()}..."
         output_path = os.path.join(self.get_download_path(), '%(title)s.%(ext)s')
 
-        base_cmd = ['yt-dlp', '--ffmpeg-location', self.ffmpeg_path, '-o', output_path]
+        cmd = [self.ytdlp_path, '--ffmpeg-location', self.ffmpeg_path, '-o', output_path]
         if format == 'mp3':
-            base_cmd += ['-x', '--audio-format', 'mp3']
+            cmd += ['-x', '--audio-format', 'mp3']
         else:
-            base_cmd += ['-f', 'bestvideo+bestaudio', '--merge-output-format', 'mp4']
-        base_cmd.append(url)
+            cmd += ['-f', 'bestvideo+bestaudio', '--merge-output-format', 'mp4']
+        cmd.append(url)
 
-        if not self.run_command(base_cmd):
-            fallback_cmd = [self.ytdlp_path, '--ffmpeg-location', self.ffmpeg_path, '-o', output_path]
-            if format == 'mp3':
-                fallback_cmd += ['-x', '--audio-format', 'mp3']
-            else:
-                fallback_cmd += ['-f', 'bestvideo+bestaudio', '--merge-output-format', 'mp4']
-            fallback_cmd.append(url)
-
-            if not self.run_command(fallback_cmd):
-                self.status.text = f"Status: Failed to download {format.upper()}!"
-                return
+        if not self.run_command(cmd):
+            self.status.text = f"Status: Failed to download {format.upper()}!"
+            return
 
         self.status.text = f"Status: {format.upper()} downloaded to Downloads!"
 
@@ -171,3 +174,5 @@ class YTConverterApp(App):
 
 if __name__ == '__main__':
     YTConverterApp().run()
+
+
