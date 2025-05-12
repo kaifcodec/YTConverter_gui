@@ -26,17 +26,17 @@ jobs:
       - name: Prepare Android SDK & Accept Licenses
         run: |
           echo "Setting up Android SDK"
-
+          
+          # Set SDK root
           export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
-          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/latest
-
-          echo "Moving cmdline-tools to proper place"
-          mv $ANDROID_SDK_ROOT/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
-
+          
+          # Directly set the path for cmdline-tools
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
-
-          echo "Installing and accepting Android SDK packages"
+          
+          # Accept licenses for required SDK tools
           yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
+          
+          # Install necessary Android SDK packages
           $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
       - name: Build APK
