@@ -1,3 +1,5 @@
+name: Build APK
+
 on:
   push:
     branches: [ main ]
@@ -9,17 +11,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Cache the build dependencies (NDK, SDK, etc.)
-      - name: Cache Buildozer dependencies
+      - name: Cache Buildozer, SDK, and NDK
         uses: actions/cache@v4
         with:
           path: |
             ~/.buildozer
             ~/.cache
-            /home/runner/.buildozer
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('**/requirements.txt') }}
+            ~/.buildozer/android/platform/android-sdk
+            ~/.buildozer/android/platform/android-ndk
+            # Add any custom directories where your binaries (ffmpeg, yt-dlp) are stored
+            ~/.buildozer/android/app/code_cache
+          key: Linux-buildozer-${{ runner.os }}-${{ hashFiles('**/buildozer.spec') }}
           restore-keys: |
-            ${{ runner.os }}-buildozer-
+            Linux-buildozer-${{ runner.os }}-
 
       - name: Build APK
         uses: digreatbrian/buildozer-action@v2
