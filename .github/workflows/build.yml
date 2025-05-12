@@ -23,20 +23,27 @@ jobs:
           python -m pip install --upgrade pip
           pip install --user buildozer cython
 
-      - name: Prepare Android SDK & Accept Licenses
+      - name: Set up Android SDK
         run: |
           echo "Setting up Android SDK"
           
           # Set SDK root
           export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
           
-          # Directly set the path for cmdline-tools
+          # Download cmdline-tools if they don't exist
+          if [ ! -d "$ANDROID_SDK_ROOT/cmdline-tools" ]; then
+            echo "Downloading cmdline-tools..."
+            wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip -P /tmp
+            unzip /tmp/commandlinetools-linux-8512546_latest.zip -d $ANDROID_SDK_ROOT
+          fi
+
+          # Set the path correctly to cmdline-tools/bin
           export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
-          
-          # Accept licenses for required SDK tools
+
+          # Accept licenses for SDK tools
           yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
-          
-          # Install necessary Android SDK packages
+
+          # Install the necessary SDK packages
           $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
       - name: Build APK
