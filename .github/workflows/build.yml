@@ -11,8 +11,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      ANDROID_SDK_ROOT: /home/runner/android-sdk
-      PATH: /home/runner/android-sdk/cmdline-tools/latest/bin:/home/runner/android-sdk/platform-tools:${{ env.PATH }}
+      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+      BUILD_TOOLS_VERSION: "33.0.2"
+      NDK_VERSION: "23.1.7779620"
 
     steps:
       - name: Checkout code
@@ -29,7 +30,7 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Android SDK and accept licenses
+      - name: Install Android SDK manually and accept licenses
         run: |
           mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
           cd $ANDROID_SDK_ROOT/cmdline-tools
@@ -37,12 +38,13 @@ jobs:
           unzip sdk.zip -d temp
           mv temp/cmdline-tools latest
 
-          yes | sdkmanager --licenses
-          sdkmanager \
+          echo "y" | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
+
+          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
             "platform-tools" \
             "platforms;android-31" \
-            "build-tools;33.0.2" \
-            "ndk;23.1.7779620"
+            "build-tools;$BUILD_TOOLS_VERSION" \
+            "ndk;$NDK_VERSION"
 
       - name: Install system deps & Buildozer
         run: |
@@ -51,20 +53,17 @@ jobs:
           pip install --upgrade pip
           pip install buildozer Cython virtualenv
 
-      - name: Patch buildozer.spec for custom SDK/NDK and build-tools
+      - name: Patch buildozer.spec for custom SDK
         run: |
-          # Remove any duplicates first
           sed -i '/^android.sdk_path/d' buildozer.spec
           sed -i '/^android.ndk_path/d' buildozer.spec
           sed -i '/^android.accept_sdk_license/d' buildozer.spec
-          sed -i '/^android.build_tools_version/d' buildozer.spec
 
-          # Append correct values
-          echo "android.sdk_path = /home/runner/android-sdk" >> buildozer.spec
-          echo "android.ndk_path = /home/runner/android-sdk/ndk/23.1.7779620" >> buildozer.spec
+          echo "android.sdk_path = $ANDROID_SDK_ROOT" >> buildozer.spec
+          echo "android.ndk_path = $ANDROID_SDK_ROOT/ndk/$NDK_VERSION" >> buildozer.spec
           echo "android.accept_sdk_license = True" >> buildozer.spec
-          echo "android.build_tools_version = 33.0.2" >> buildozer.spec
 
       - name: Build APK
         run: |
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
           buildozer android debug
