@@ -1,22 +1,16 @@
-name: Build Kivy APK
+name: Build APK
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:
-      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
-      BUILD_TOOLS_VERSION: "33.0.2"
-      NDK_VERSION: "23.1.7779620"
-
     steps:
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v3
 
       - name: Set up Python
@@ -24,46 +18,35 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Set up Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Install Android SDK manually and accept licenses
+      - name: Install dependencies
         run: |
-          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
-          cd $ANDROID_SDK_ROOT/cmdline-tools
-          curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-          unzip sdk.zip -d temp
-          mv temp/cmdline-tools latest
+          python -m pip install --upgrade pip
+          pip install --user buildozer cython
 
-          echo "y" | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
-
-          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
-            "platform-tools" \
-            "platforms;android-31" \
-            "build-tools;$BUILD_TOOLS_VERSION" \
-            "ndk;$NDK_VERSION"
-
-      - name: Install system deps & Buildozer
+      - name: Fix Android SDK and Force Build Tools 33.0.2
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential zip unzip git python3-pip
-          pip install --upgrade pip
-          pip install buildozer Cython virtualenv
+          echo "Setting up Android SDK environment"
+          export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
 
-      - name: Patch buildozer.spec for custom SDK
-        run: |
-          sed -i '/^android.sdk_path/d' buildozer.spec
-          sed -i '/^android.ndk_path/d' buildozer.spec
-          sed -i '/^android.accept_sdk_license/d' buildozer.spec
+          echo "Installing Build-Tools 33.0.2 and accepting licenses"
+          yes | sdkmanager --licenses
+          sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
-          echo "android.sdk_path = $ANDROID_SDK_ROOT" >> buildozer.spec
-          echo "android.ndk_path = $ANDROID_SDK_ROOT/ndk/$NDK_VERSION" >> buildozer.spec
-          echo "android.accept_sdk_license = True" >> buildozer.spec
+          echo "Verifying AIDL exists"
+          ls $ANDROID_SDK_ROOT/build-tools/33.0.2/aidl || (echo "AIDL missing!" && exit 1)
+
+          echo "Overriding PATH with correct build-tools version"
+          export PATH=$ANDROID_SDK_ROOT/build-tools/33.0.2:$PATH
 
       - name: Build APK
         run: |
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
+          export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/build-tools/33.0.2:$PATH
           buildozer android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-app
+          path: bin/*.apk
