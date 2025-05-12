@@ -2,7 +2,10 @@
 
 # (str) Title of your application
 title = YTConverter
+
+# (str) Application versioning (required)
 version = 1.0.0
+
 # (str) Package name (should be unique, use your domain reversed)
 package.name = ytconverter
 
@@ -28,66 +31,41 @@ fullscreen = 0
 
 # (bool) Hide the statusbar
 android.hide_status_bar = 0
-# (str) Android entry point, default is ok
-#android.entrypoint = org.kivy.android.PythonActivity
-
-# (str) Android app theme, uncomment to disable ActionBar and use fullscreen
-# android.theme = '@android:style/Theme.NoTitleBar'
 
 # (list) Permissions
 android.permissions = INTERNET,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
 
 # (int) Android API to use
 android.api = 31
+
+# (str) Android Build-Tools version (must match your GitHub Actions install)
 android.build_tools_version = 33.0.2
+
 # (int) Minimum API your APK will support
 android.minapi = 21
 
-# (int) Android SDK version to compile against
-android.sdk = 31
-
-# (str) Android NDK version to use
+# (str) Android NDK version to use (must match your GitHub Actions install)
 android.ndk = 23b
 
-# (int) Android NDK API to use (this is the minimum API your app will support for native code)
+# (int) Android NDK API to use (minimum native code support)
 android.ndk_api = 21
 
-# (bool) Indicate if the build should be debug (unsigned) or release (signed)
-#   For testing leave as debug; for publishing set to False and sign manually
+# (bool) Build as debug (unsigned) or release (signed)
 android.debug = True
-
-# (list) Android additional libraries to copy to libs/armeabi-v7a
-#android.add_libs_armeabi_v7a = libs/armeabi-v7a/libxyz.so
-
-# (str) Android logcat filters to use
-#android.logcat_filters = *:S python:D
-
-# (str) Python code to run before your main.py
-# (useful if you need to inject env vars)
-# p4a.bootstrap = sdl2
 
 [buildozer]
 
-# (int) Log level (0 = error only, 1 = warning, 2 = info, 3 = debug)
+# (int) Log level (0 = error only, 2 = info, 3 = debug)
 log_level = 2
 
-# (bool) Whether to update the local copy of python-for-android
+# (bool) Don’t let p4a re-download SDK/NDK—use what's in the env
 p4a.local_recipes = False
 
-# (str) Path to a custom python-for-android checkout
-#p4a.source_dir = ../python-for-android
+# (str) Point Buildozer at the SDK we installed in GitHub Actions
+android.sdk_path = $ANDROID_SDK_ROOT
 
-# (str) Directory in which python-for-android should look for prebuilt recipes
-#p4a.recipedir =
+# (str) Point Buildozer at the NDK we installed in GitHub Actions
+android.ndk_path = $ANDROID_NDK_HOME
 
-# (str) Android SDK directory (if you installed it manually)
-#android.sdk_path = /path/to/android-sdk
-
-# (str) Android NDK directory (if you installed it manually)
-#android.ndk_path = /path/to/android-ndk
-
-# (str) Ant directory (if using ant, not needed here)
-#android.ant_path = /path/to/ant
-
-# (str) Java directory (if you have multiple JDKs)
-#java.home = /usr/lib/jvm/java-11-openjdk
+# (str) Java home (should pick up the JDK set by setup-java)
+#java.home = /usr/lib/jvm/java-17-temurin
