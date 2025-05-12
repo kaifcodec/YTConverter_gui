@@ -1,0 +1,33 @@
+name: Build Kivy APK
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y git zip unzip openjdk-11-jdk python3-pip libffi-dev build-essential libssl-dev libsqlite3-dev zlib1g-dev
+        pip install buildozer cython
+
+    - name: Initialize Buildozer
+      run: |
+        buildozer android debug
+        ls -l bin/
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: YTConverter
+        path: bin/*.apk
