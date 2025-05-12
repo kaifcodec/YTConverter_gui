@@ -20,24 +20,30 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Android SDK & Build-Tools & NDK
-        uses: android-actions/setup-android@v3
-        with:
-          cmdline-tools-version: '12.0'
-          accept-android-sdk-licenses: true
-          log-accepted-android-sdk-licenses: true
-          packages: 'cmdline-tools;12.0 platform-tools platforms;android-31 build-tools;33.0.2 ndk;23.1.7779620'
-
-      - name: Export Android SDK/NDK paths
-        run: |
-          echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
-          echo "ANDROID_NDK_HOME=/usr/local/lib/android/sdk/ndk/23.1.7779620" >> $GITHUB_ENV
-
       - name: Install system deps & Buildozer
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential git zip unzip python3-pip
+          sudo apt-get install -y build-essential git zip unzip python3-pip openjdk-17-jdk
           pip3 install --upgrade pip setuptools Cython virtualenv buildozer
 
+      - name: Install Android SDK manually and accept licenses
+        run: |
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          cd $HOME/android-sdk/cmdline-tools
+          curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          unzip sdk.zip -d latest
+          export ANDROID_SDK_ROOT=$HOME/android-sdk
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
+
+          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
+          sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
+            "platform-tools" \
+            "platforms;android-31" \
+            "build-tools;33.0.2" \
+            "ndk;23.1.7779620"
+
       - name: Build APK
+        env:
+          ANDROID_SDK_ROOT: $HOME/android-sdk
+          ANDROID_NDK_HOME: $HOME/android-sdk/ndk/23.1.7779620
         run: buildozer android debug
