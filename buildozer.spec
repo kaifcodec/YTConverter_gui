@@ -28,7 +28,7 @@ fullscreen = 0
 
 # (bool) Hide the statusbar
 android.hide_status_bar = 0
-
+android.build_tools_version = 33.0.2
 # (str) Android entry point, default is ok
 #android.entrypoint = org.kivy.android.PythonActivity
 
