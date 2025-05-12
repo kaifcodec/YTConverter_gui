@@ -28,7 +28,12 @@ jobs:
 
       - name: Accept Android SDK Licenses
         run: yes | sdkmanager --licenses || true
-
+      - name: Preinstall SDK Build Tools 33.0.2
+        run: |
+          mkdir -p ~/.android
+          touch ~/.android/repositories.cfg
+          yes | sdkmanager --licenses || true
+          yes | sdkmanager "platform-tools" "platforms;android-31" "build-tools;33.0.2"
       - name: Build APK
         run: |
           buildozer android debug
