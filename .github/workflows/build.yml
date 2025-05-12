@@ -52,11 +52,15 @@ jobs:
 
       - name: Patch buildozer.spec for custom SDK
         run: |
-          sed -i '/^# *android.sdk_path/d' buildozer.spec
-          sed -i '/^# *android.ndk_path/d' buildozer.spec
-          echo "android.sdk_path = /home/runner/android-sdk" >> buildozer.spec
+          # Remove any existing definitions to avoid duplicates
+          sed -i '/^ *android.sdk_path/d' buildozer.spec
+          sed -i '/^ *android.ndk_path/d' buildozer.spec
+          sed -i '/^ *android.accept_sdk_license/d' buildozer.spec
+
+          # Append exactly one of each
+          echo "android.sdk_path = /home/runner/android-sdk"             >> buildozer.spec
           echo "android.ndk_path = /home/runner/android-sdk/ndk/23.1.7779620" >> buildozer.spec
-          echo "android.accept_sdk_license = True" >> buildozer.spec
+          echo "android.accept_sdk_license = True"                         >> buildozer.spec
 
       - name: Build APK
         run: |
