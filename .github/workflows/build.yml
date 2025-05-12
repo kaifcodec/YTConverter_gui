@@ -46,4 +46,4 @@ jobs:
         env:
           ANDROID_SDK_ROOT: $HOME/android-sdk
           ANDROID_NDK_HOME: $HOME/android-sdk/ndk/23.1.7779620
-        run: buildozer android debug
+        run: buildozer android debug 
