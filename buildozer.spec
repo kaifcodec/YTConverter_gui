@@ -35,7 +35,6 @@ android.debug = True
 
 log_level = 2
 
-android.sdk_path = /home/runner/android-sdk
-android.ndk_path = /home/runner/android-sdk/ndk/23.1.7779620
+
 android.accept_sdk_license = True
 p4a.local_recipes = False
