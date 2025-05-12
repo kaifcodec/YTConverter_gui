@@ -1,39 +1,34 @@
 on:
-
   push:
-
     branches: [ main ]
 
-
-
 jobs:
-
   build:
-
     runs-on: ubuntu-22.04
 
     steps:
-
       - uses: actions/checkout@v4
 
-      - name: Build APK
-
-        uses: digreatbrian/buildozer-action@v2
-
+      # Cache the build dependencies (NDK, SDK, etc.)
+      - name: Cache Buildozer dependencies
+        uses: actions/cache@v2
         with:
+          path: |
+            ~/.buildozer
+            ~/.cache
+            /home/runner/.buildozer
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-buildozer-
 
+      - name: Build APK
+        uses: digreatbrian/buildozer-action@v2
+        with:
           python-version: 3.11
-
           buildozer-cmd: buildozer -v android debug
 
-
-
       - name: Upload artifacts
-
         uses: actions/upload-artifact@v4
-
         with:
-
           name: package
-
           path: ./bin/*.apk
