@@ -28,7 +28,6 @@ fullscreen = 0
 
 # (bool) Hide the statusbar
 android.hide_status_bar = 0
-android.build_tools_version = 33.0.2
 # (str) Android entry point, default is ok
 #android.entrypoint = org.kivy.android.PythonActivity
 
@@ -40,7 +39,7 @@ android.permissions = INTERNET,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
 
 # (int) Android API to use
 android.api = 31
-
+android.build_tools_version = 33.0.2
 # (int) Minimum API your APK will support
 android.minapi = 21
 
