@@ -19,15 +19,15 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y git zip unzip openjdk-11-jdk python3-pip libffi-dev build-essential libssl-dev libsqlite3-dev zlib1g-dev
+        pip install --upgrade pip
         pip install buildozer cython
 
-    - name: Initialize Buildozer
+    - name: Build APK
       run: |
         buildozer android debug
-        ls -l bin/
 
     - name: Upload APK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: YTConverter
         path: bin/*.apk
