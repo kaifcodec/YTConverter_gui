@@ -1,178 +1,113 @@
 import os
+import shutil
 import subprocess
-import traceback
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.label import Label
-from kivy.uix.button import Button
-from kivy.uix.textinput import TextInput
 from kivy.uix.scrollview import ScrollView
-from kivy.uix.popup import Popup
-from android.storage import primary_external_storage_path
+from kivy.uix.label import Label
 from jnius import autoclass, cast
 
+PythonActivity = autoclass('org.kivy.android.PythonActivity')
+Context = autoclass('android.content.Context')
+AssetManager = autoclass('android.content.res.AssetManager')
 
-class YTDownloader(BoxLayout):
+# Path setup
+CACHE_DIR = PythonActivity.mActivity.getCacheDir().getAbsolutePath()
+BIN_DIR = os.path.join(CACHE_DIR, "ytconverter_bin")
+DOWNLOAD_DIR = os.path.join(PythonActivity.mActivity.getExternalFilesDir(None).getAbsolutePath(), "downloads")
+
+# Assets
+BINARIES = ["ffmpeg", "yt-dlp"]
+
+# Log handling
+class LogBox(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(orientation='vertical', **kwargs)
-
-        self.add_widget(Label(text="Enter YouTube URL:"))
-        self.url_input = TextInput(multiline=False)
-        self.add_widget(self.url_input)
-
-        self.mp3_btn = Button(text="Download as MP3")
-        self.mp3_btn.bind(on_press=self.download_mp3)
-        self.add_widget(self.mp3_btn)
-
-        self.mp4_btn = Button(text="Download as MP4")
-        self.mp4_btn.bind(on_press=self.download_mp4)
-        self.add_widget(self.mp4_btn)
-
-        self.log_btn = Button(text="View Log")
-        self.log_btn.bind(on_press=self.show_log)
-        self.add_widget(self.log_btn)
-
-        self.status = Label(text="Status: Idle")
-        self.add_widget(self.status)
-
-        # Use code_cache directory
-        self.app_context = autoclass('org.kivy.android.PythonActivity').mActivity.getApplicationContext()
-        self.code_cache_dir = self.app_context.getCodeCacheDir().getAbsolutePath()
-        self.ffmpeg_path = os.path.join(self.code_cache_dir, 'ffmpeg')
-        self.ytdlp_path = os.path.join(self.code_cache_dir, 'yt-dlp')
-        self.log_path = os.path.join(self.code_cache_dir, 'ytconverter_debug.log')
-
-        self.setup_binaries()
-
-    def extract_asset(self, asset_name, dest_path):
-        try:
-            PythonActivity = autoclass('org.kivy.android.PythonActivity')
-            asset_manager = PythonActivity.mActivity.getAssets()
-            input_stream = asset_manager.open(f'bin/{asset_name}')
-            with open(dest_path, 'wb') as out_file:
-                buf = bytearray(4096)
-                while True:
-                    length = input_stream.read(buf)
-                    if length == -1 or length == 0:
-                        break
-                    out_file.write(buf[:length])
-            os.chmod(dest_path, 0o755)
-            return True
-        except Exception as e:
-            self.log_error(f"Failed to extract asset: {asset_name}", e)
-            return False
-
-    def setup_binaries(self):
-        try:
-            ffmpeg_ok = True
-            ytdlp_ok = True
-
-            if not os.path.exists(self.ffmpeg_path):
-                ffmpeg_ok = self.extract_asset('ffmpeg', self.ffmpeg_path)
-
-            if not os.path.exists(self.ytdlp_path):
-                ytdlp_ok = self.extract_asset('yt-dlp', self.ytdlp_path)
-
-            if ffmpeg_ok and ytdlp_ok:
-                self.status.text = "Status: Binaries setup OK"
-            else:
-                self.status.text = "Status: Binaries setup failed"
-        except Exception as e:
-            self.status.text = "Status: Exception during setup"
-            self.log_error("setup_binaries", e)
-
-    def ensure_binaries(self):
-        if not os.path.exists(self.ffmpeg_path):
-            self.extract_asset('ffmpeg', self.ffmpeg_path)
-        if not os.path.exists(self.ytdlp_path):
-            self.extract_asset('yt-dlp', self.ytdlp_path)
-
-    def get_download_path(self):
-        return os.path.join(primary_external_storage_path(), 'Download')
-
-    def log_error(self, context, exc):
-        try:
-            with open(self.log_path, 'a') as log_file:
-                log_file.write(f"\n--- {context} ---\n")
-                log_file.write(traceback.format_exc())
-                log_file.write("\n")
-        except Exception as log_exc:
-            print(f"Logging failed: {log_exc}")
-        print(f"[ERROR] {context}: {exc}")
-
-    def run_command(self, cmd):
-        try:
-            subprocess.run(cmd, check=True)
-            return True
-        except FileNotFoundError as e:
-            self.log_error("Command not found", e)
-            return False
-        except subprocess.CalledProcessError as e:
-            self.log_error("Command failed", e)
-            return False
-        except Exception as e:
-            self.log_error("Unexpected error", e)
-            return False
-
-    def download(self, format):
-        url = self.url_input.text.strip()
-        if not url:
-            self.status.text = "Status: Please enter a URL."
-            return
-
-        # Ensure binaries before each download
-        self.ensure_binaries()
-
-        self.status.text = f"Status: Downloading {format.upper()}..."
-        output_path = os.path.join(self.get_download_path(), '%(title)s.%(ext)s')
-
-        cmd = [self.ytdlp_path, '--ffmpeg-location', self.ffmpeg_path, '-o', output_path]
-        if format == 'mp3':
-            cmd += ['-x', '--audio-format', 'mp3']
-        else:
-            cmd += ['-f', 'bestvideo+bestaudio', '--merge-output-format', 'mp4']
-        cmd.append(url)
-
-        if not self.run_command(cmd):
-            self.status.text = f"Status: Failed to download {format.upper()}!"
-            return
-
-        self.status.text = f"Status: {format.upper()} downloaded to Downloads!"
-
-    def download_mp3(self, instance):
-        self.download('mp3')
-
-    def download_mp4(self, instance):
-        self.download('mp4')
-
-    def show_log(self, instance):
-        try:
-            with open(self.log_path, 'r') as f:
-                log_content = f.read()
-        except FileNotFoundError:
-            log_content = "No logs found."
-
-        log_box = BoxLayout(orientation='vertical')
+        self.label = Label(text="", size_hint_y=None, halign="left", valign="top")
+        self.label.bind(texture_size=self.label.setter("size"))
         scroll = ScrollView()
-        log_text = TextInput(text=log_content, readonly=True, size_hint_y=None)
-        log_text.height = max(600, len(log_content.splitlines()) * 20)
-        scroll.add_widget(log_text)
+        scroll.add_widget(self.label)
+        self.add_widget(scroll)
 
-        close_btn = Button(text="Close", size_hint_y=None, height=50)
-        popup = Popup(title='YTConverter Logs', content=log_box, size_hint=(0.9, 0.9))
-        close_btn.bind(on_press=popup.dismiss)
+    def log(self, message):
+        self.label.text += f"\n{message}"
+        print(message)
 
-        log_box.add_widget(scroll)
-        log_box.add_widget(close_btn)
-        popup.open()
-
-
-class YTConverterApp(App):
+class YTApp(App):
     def build(self):
-        return YTDownloader()
+        self.logbox = LogBox()
+        self.setup()
+        return self.logbox
 
+    def log(self, msg):
+        self.logbox.log(msg)
+
+    def setup(self):
+        self.log("Initializing YTConverter...")
+        self.ensure_download_dir()
+        self.copy_binaries_if_missing()
+        self.download_sample_video()
+
+    def ensure_download_dir(self):
+        if not os.path.exists(DOWNLOAD_DIR):
+            os.makedirs(DOWNLOAD_DIR)
+            self.log(f"Created download directory: {DOWNLOAD_DIR}")
+        else:
+            self.log(f"Download directory exists: {DOWNLOAD_DIR}")
+
+    def extract_asset(self, asset_name, output_path):
+        try:
+            asset_manager = PythonActivity.mActivity.getAssets()
+            input_stream = asset_manager.open(f"bin/{asset_name}")
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            with open(output_path, 'wb') as f:
+                buffer = bytearray(1024)
+                while True:
+                    read = input_stream.read(buffer)
+                    if read == -1:
+                        break
+                    f.write(buffer[:read])
+            input_stream.close()
+            os.chmod(output_path, 0o755)
+            self.log(f"Copied asset '{asset_name}' to '{output_path}' with chmod 755")
+        except Exception as e:
+            self.log(f"Failed to extract asset '{asset_name}': {e}")
+
+    def copy_binaries_if_missing(self):
+        for binary in BINARIES:
+            full_path = os.path.join(BIN_DIR, binary)
+            if not os.path.exists(full_path):
+                self.log(f"{binary} missing, copying from assets...")
+                self.extract_asset(binary, full_path)
+            else:
+                self.log(f"{binary} exists at: {full_path}")
+                os.chmod(full_path, 0o755)  # Ensure executable every time
+                self.log(f"{binary} permission updated (755)")
+
+    def download_sample_video(self):
+        url = "https://www.youtube.com/watch?v=BaW_jenozKc"  # Sample video for test
+        ytdlp_path = os.path.join(BIN_DIR, "yt-dlp")
+        ffmpeg_path = os.path.join(BIN_DIR, "ffmpeg")
+
+        self.log(f"Using yt-dlp: {ytdlp_path}")
+        self.log(f"Using ffmpeg: {ffmpeg_path}")
+        self.log(f"Output directory: {DOWNLOAD_DIR}")
+
+        try:
+            result = subprocess.run([
+                ytdlp_path,
+                "--ffmpeg-location", ffmpeg_path,
+                "-f", "bestvideo+bestaudio/best",
+                "--merge-output-format", "mp4",
+                "-o", os.path.join(DOWNLOAD_DIR, "%(title)s.%(ext)s"),
+                url
+            ], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            self.log("yt-dlp output:")
+            self.log(result.stdout)
+        except FileNotFoundError as fnf:
+            self.log(f"[Error] Command not found: {fnf}")
+        except Exception as e:
+            self.log(f"[Error] Failed to run yt-dlp: {e}")
 
 if __name__ == '__main__':
-    YTConverterApp().run()
-
-
+    YTApp().run()
