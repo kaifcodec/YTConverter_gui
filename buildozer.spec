@@ -1,7 +1,7 @@
 [app]
 
 # (str) Title of your application
-title = YTConverter™
+title = YTConverter
 version = 1.0.0
 # (str) Package name (should be unique, use your domain reversed)
 package.name = ytconverter
