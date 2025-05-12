@@ -23,18 +23,15 @@ jobs:
       - name: Install Android SDK & Build-Tools & NDK
         uses: android-actions/setup-android@v3
         with:
-          # Command-line tools version (must match what's on runner or latest)
           cmdline-tools-version: '12.0'
-          # List of SDK packages to install
-          packages: |
-            cmdline-tools;12.0
-            platform-tools
-            platforms;android-31
-            build-tools;33.0.2
-            ndk;23.1.7779620
-          # Auto-accept all SDK licenses
           accept-android-sdk-licenses: true
           log-accepted-android-sdk-licenses: true
+          packages:
+            - cmdline-tools;12.0
+            - platform-tools
+            - platforms;android-31
+            - build-tools;33.0.2
+            - ndk;23.1.7779620
 
       - name: Export Android SDK/NDK paths
         run: |
