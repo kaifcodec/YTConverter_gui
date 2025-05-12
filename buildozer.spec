@@ -2,12 +2,12 @@
 
 # (str) Title of your application
 title = YTConverter™
-
+version = 1.0.0
 # (str) Package name (should be unique, use your domain reversed)
 package.name = ytconverter
 
 # (str) Package domain (used to generate the Java package)
-package.domain = com.yourname
+package.domain = com.kaif
 
 # (str) Source code entry point (your main.py)
 source.dir = .
