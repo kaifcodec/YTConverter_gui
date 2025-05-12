@@ -1,5 +1,4 @@
 import os
-import shutil
 import subprocess
 import traceback
 
@@ -9,8 +8,9 @@ from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
 
-from android.storage import primary_external_storage_path
 from android import mActivity
+from android.storage import primary_external_storage_path
+
 
 class YTDownloader(BoxLayout):
     def __init__(self, **kwargs):
@@ -32,26 +32,36 @@ class YTDownloader(BoxLayout):
         self.add_widget(self.status)
 
         self.app_dir = App.get_running_app().user_data_dir
-        self.ffmpeg_dest = os.path.join(self.app_dir, 'ffmpeg')
         self.log_path = os.path.join(self.app_dir, 'error.log')
 
-        self.prepare_ffmpeg()
+        self.ffmpeg_path = os.path.join(self.app_dir, 'ffmpeg')
+        self.ytdlp_path = os.path.join(self.app_dir, 'yt-dlp')
 
-    def prepare_ffmpeg(self):
+        self.prepare_binary('bin/ffmpeg', self.ffmpeg_path)
+        self.prepare_binary('bin/yt-dlp', self.ytdlp_path)
+
+        self.ytdlp_cmd = self.get_working_ytdlp()
+
+    def prepare_binary(self, asset_name, dest_path):
         try:
-            if not os.path.exists(self.ffmpeg_dest):
-                # Extract the ffmpeg binary from the assets folder
+            if not os.path.exists(dest_path):
                 AssetManager = mActivity.getAssets()
-                with AssetManager.open("bin/ffmpeg") as input_stream, open(self.ffmpeg_dest, 'wb') as out_file:
+                with AssetManager.open(asset_name) as src, open(dest_path, 'wb') as out:
                     while True:
-                        buff = input_stream.read(1024)
-                        if not buff:
+                        chunk = src.read(1024)
+                        if not chunk:
                             break
-                        out_file.write(buff)
-                os.chmod(self.ffmpeg_dest, 0o755)
+                        out.write(chunk)
+                os.chmod(dest_path, 0o755)
         except Exception as e:
-            self.log_error("Failed to setup ffmpeg", e)
-            self.status.text = "Status: Failed to setup ffmpeg"
+            self.log_error(f"Extracting {asset_name} failed", e)
+
+    def get_working_ytdlp(self):
+        try:
+            subprocess.run(['yt-dlp', '--version'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+            return 'yt-dlp'
+        except Exception:
+            return self.ytdlp_path  # fallback to bundled binary
 
     def get_download_path(self):
         return os.path.join(primary_external_storage_path(), 'Download')
@@ -72,10 +82,9 @@ class YTDownloader(BoxLayout):
         self.status.text = f"Status: Downloading {format.upper()}..."
 
         output_path = os.path.join(self.get_download_path(), '%(title)s.%(ext)s')
-
         cmd = [
-            'yt-dlp',
-            '--ffmpeg-location', self.ffmpeg_dest,
+            self.ytdlp_cmd,
+            '--ffmpeg-location', self.ffmpeg_path,
             '-o', output_path
         ]
 
@@ -88,7 +97,7 @@ class YTDownloader(BoxLayout):
 
         try:
             subprocess.run(cmd, check=True)
-            self.status.text = f"Status: {format.upper()} downloaded to Download folder!"
+            self.status.text = f"Status: {format.upper()} downloaded!"
         except subprocess.CalledProcessError as e:
             self.status.text = "Status: Download failed!"
             self.log_error("Download failed", e)

@@ -13,7 +13,7 @@ package.domain = org.kaifcodec.yt
 source.dir = .
 
 # (list) Source files to include (let empty to include all the files)
-source.include_exts = py,png,jpg,kv,atlas,ffmpeg
+source.include_exts = py,png,jpg,kv,atlas,ffmpeg,yt-dlp
 
 # (list) List of inclusions using pattern matching
 #source.include_patterns = assets/*,images/*.png
@@ -37,8 +37,7 @@ version = 0.1
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,kivy,https://github.com/kivymd/KivyMD/archive/master.zip,materialyoucolor,exceptiongroup,asyncgui,asynckivy,android,pillow,yt-dlp
-
+requirements = kivy,https://github.com/kivymd/KivyMD/archive/refs/heads/master.zip,materialyoucolor,exceptiongroup,asyncgui,asynckivy,pillow,yt-dlp
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
 # requirements.source.kivy = ../../kivy
