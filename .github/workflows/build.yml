@@ -10,6 +10,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      ANDROID_SDK_ROOT: /home/runner/android-sdk
+      PATH: /home/runner/android-sdk/cmdline-tools/latest/bin:/home/runner/android-sdk/platform-tools:${{ env.PATH }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -25,19 +29,16 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Android SDK manually and accept licenses
+      - name: Install Android SDK and accept licenses
         run: |
-          mkdir -p $HOME/android-sdk/cmdline-tools
-          cd $HOME/android-sdk/cmdline-tools
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+          cd $ANDROID_SDK_ROOT/cmdline-tools
           curl -o sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           unzip sdk.zip -d temp
           mv temp/cmdline-tools latest
 
-          export ANDROID_SDK_ROOT=$HOME/android-sdk
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
-
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
-          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
+          yes | sdkmanager --licenses
+          sdkmanager \
             "platform-tools" \
             "platforms;android-31" \
             "build-tools;33.0.2" \
@@ -50,17 +51,19 @@ jobs:
           pip install --upgrade pip
           pip install buildozer Cython virtualenv
 
-      - name: Patch buildozer.spec for custom SDK
+      - name: Patch buildozer.spec for custom SDK/NDK and build-tools
         run: |
-          # Remove any existing definitions to avoid duplicates
-          sed -i '/^ *android.sdk_path/d' buildozer.spec
-          sed -i '/^ *android.ndk_path/d' buildozer.spec
-          sed -i '/^ *android.accept_sdk_license/d' buildozer.spec
+          # Remove any duplicates first
+          sed -i '/^android.sdk_path/d' buildozer.spec
+          sed -i '/^android.ndk_path/d' buildozer.spec
+          sed -i '/^android.accept_sdk_license/d' buildozer.spec
+          sed -i '/^android.build_tools_version/d' buildozer.spec
 
-          # Append exactly one of each
-          echo "android.sdk_path = /home/runner/android-sdk"             >> buildozer.spec
+          # Append correct values
+          echo "android.sdk_path = /home/runner/android-sdk" >> buildozer.spec
           echo "android.ndk_path = /home/runner/android-sdk/ndk/23.1.7779620" >> buildozer.spec
-          echo "android.accept_sdk_license = True"                         >> buildozer.spec
+          echo "android.accept_sdk_license = True" >> buildozer.spec
+          echo "android.build_tools_version = 33.0.2" >> buildozer.spec
 
       - name: Build APK
         run: |
