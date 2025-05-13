@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache Buildozer, SDK, and NDK
+      - name: Cache Buildozer, SDK, NDK, and Python Environment
         uses: actions/cache@v4
         with:
           path: |
@@ -19,20 +19,34 @@ jobs:
             ~/.cache
             ~/.buildozer/android/platform/android-sdk
             ~/.buildozer/android/platform/android-ndk
-            # Add any custom directories where your binaries (ffmpeg, yt-dlp) are stored
             ~/.buildozer/android/app/code_cache
-          key: Linux-buildozer-${{ runner.os }}-${{ hashFiles('**/buildozer.spec') }}
+            .venv  # Cache the Python virtual environment
+          key: Linux-buildozer-${{ runner.os }}-python-${hashFiles('**/buildozer.spec', 'requirements.txt')}
           restore-keys: |
-            Linux-buildozer-${{ runner.os }}-
+            Linux-buildozer-${{ runner.os }}-python-
 
-      - name: Build APK
-        uses: digreatbrian/buildozer-action@v2
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: 3.11
-          buildozer-cmd: buildozer -v android debug
+
+      - name: Install Python Dependencies and Buildozer
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -U Cython kivy-deps  # Ensure Kivy dependencies are installed
+          pip install buildozer
+
+      - name: Build APK (Debug)
+        run: |
+          source .venv/bin/activate
+          buildozer -v android debug
+        id: buildozer
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: package
-          path: ./bin/*.apk
+          path: ${{ steps.buildozer.outputs.apk_path }} # Use output from buildozer-action
