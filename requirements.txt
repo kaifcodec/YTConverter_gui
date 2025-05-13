@@ -1,0 +1,7 @@
+kivy
+kivy-deps
+yt-dlp
+requests
+certifi
+chardet
+urllib3
