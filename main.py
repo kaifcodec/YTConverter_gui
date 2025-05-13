@@ -105,38 +105,35 @@ class YTDownloader(BoxLayout):
     def download_video(self, instance):
         url = self.url_input.text.strip()
         if not url:
-            self.log("[Error] Please enter a valid URL.")
-            return
+           self.log("[Error] Please enter a valid URL.")
+           return
 
         self.log(f"Starting download from: {url}")
         outtmpl = f'{DOWNLOAD_DIR}/%(title)s.%(ext)s'
 
         ydl_opts = {
-         'outtmpl': outtmpl,        
-         'quiet': True,
-         'progress_hooks': [self.hook],
-         'logger': YTDLogger(self.log)
-}
+          'outtmpl': outtmpl,
+          'quiet': True,
+          'progress_hooks': [self.hook],
+          'logger': YTDLogger(self.log),
+        }
 
         if self.selected_format == 'mp4':
+        # For MP4: Download best video and best audio and combine them
            ydl_opts.update({
-            'format': 'bestvideo+bestaudio/best',
-            'merge_output_format': 'mp4'
-    })
-        else:  # mp3
+             'format': 'bestvideo+bestaudio/best',
+             'merge_output_format': 'mp4',  # Force the output to MP4
+        })
+        else:  # For MP3: Just download the best audio
            ydl_opts.update({
-            'format': 'bestaudio',
-            'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }]
-    })
+             'format': 'bestaudio/best',  # Best audio format
+        })
+
         try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([url])
+           with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+              ydl.download([url])
         except Exception as e:
-            self.log(f"[Error] {str(e)}")
+           self.log(f"[Error] {str(e)}")
 
     def hook(self, d):
         if d['status'] == 'downloading':
