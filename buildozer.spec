@@ -13,7 +13,7 @@ package.domain = org.kaifcodec
 source.dir = .
 
 # (list) Source files to include (let empty to include all the files)
-source.include_exts = py,png,jpg,kv,atlas,ffmpeg,yt-dlp
+source.include_exts = py,png,jpg,kv,atlas
 
 # (list) List of inclusions using pattern matching
 #source.include_patterns = assets/*,images/*.png
@@ -29,7 +29,7 @@ source.exclude_dirs = tests, bin, venv, __pycache__
 #source.exclude_patterns = license,images/*/*.jpg
 
 # (str) Application versioning (method 1)
-version = 0.1
+version = 1.0.1
 
 # (str) Application versioning (method 2)
 # version.regex = __version__ = ['"](.*)['"]
@@ -50,7 +50,7 @@ requirements = kivy,https://github.com/kivymd/KivyMD/archive/refs/heads/master.z
 
 # (list) Supported orientations
 # Valid options are: landscape, portrait, portrait-reverse or landscape-reverse
-orientation = portrait
+orientation = all
 
 # (list) List of service to declare
 #services = NAME:ENTRYPOINT_TO_PY,NAME2:ENTRYPOINT2_TO_PY
@@ -172,11 +172,11 @@ android.accept_sdk_license = True
 # their classes. Don't add jars that you do not need, since extra jars can slow
 # down the build process. Allows wildcards matching, for example:
 # OUYA-ODK/libs/*.jar
-android.add_jars =
+#android.add_jars =
 
 # (list) List of Java files to add to the android project (can be java or a
 # directory containing the files)
-android.add_src = jniLibs
+#android.add_src = jniLibs
 
 # (list) Android AAR archives to add
 #android.add_aars =
