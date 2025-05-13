@@ -1,4 +1,5 @@
 import os
+import sys
 import yt_dlp
 import subprocess
 from kivy.app import App
@@ -21,6 +22,19 @@ DOWNLOAD_DIR = os.path.join(
     PythonActivity.mActivity.getExternalFilesDir(None).getAbsolutePath(),
     "downloads"
 )
+class Logger:
+    def debug(self, msg): pass  # Skip debug
+    def warning(self, msg): pass  # Skip warnings
+    def error(self, msg): print(msg)  # Print errors
+
+class YTDLogger:
+    def __init__(self, log_func):
+        self.log_func = log_func
+
+    def debug(self, msg): pass
+    def warning(self, msg): pass
+    def error(self, msg): self.log_func(f"[yt-dlp] {msg}")
+
 
 class YTDownloader(BoxLayout):
     def __init__(self, **kwargs):
@@ -58,10 +72,18 @@ class YTDownloader(BoxLayout):
         self.add_widget(btn_layout)
 
         # Log display
-        self.log_label = Label(text="", size_hint_y=None, halign="left", valign="top")
-        self.log_label.bind(texture_size=self.update_label_size)
+        self.log_output = TextInput(
+            text="",
+            readonly=True,
+            size_hint=(1, 1),
+            font_size="14sp",
+            background_color=(0, 0, 0, 0.1),
+            foreground_color=(1, 1, 1, 1),
+            cursor_width=0,
+            scroll_y=0
+)
         self.scrollview = ScrollView(size_hint=(1, 1))
-        self.scrollview.add_widget(self.log_label)
+        self.scrollview.add_widget(self.log_output)
         self.add_widget(self.scrollview)
 
         if not os.path.exists(DOWNLOAD_DIR):
@@ -72,8 +94,9 @@ class YTDownloader(BoxLayout):
         self.log_label.text_size = (self.width - 20, None)
 
     def log(self, message):
-        self.log_label.text += f"\n{message}"
+        self.log_output.text += f"{message}\n"
         print(message)
+
 
     def set_format(self, fmt):
         self.selected_format = fmt
