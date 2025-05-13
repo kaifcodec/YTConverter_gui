@@ -1,4 +1,4 @@
-Name: Build APK
+name: Build APK
 
 on:
   push:
@@ -36,4 +36,3 @@ jobs:
         with:
           name: package
           path: ./bin/*.apk
-
