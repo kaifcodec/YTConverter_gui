@@ -21,9 +21,9 @@ jobs:
             ~/.buildozer/android/platform/android-ndk
             ~/.buildozer/android/app/code_cache
             .venv
-          key: Linux-buildozer-Linux-python-${hashFiles('**/buildozer.spec', 'requirements.txt')}
+          key: linux-buildozer-python-${{ hashFiles('**/buildozer.spec', 'requirements.txt') }}
           restore-keys: |
-            Linux-buildozer-Linux-python-
+            linux-buildozer-python-
 
       - name: Set up Python
         uses: actions/setup-python@v5
