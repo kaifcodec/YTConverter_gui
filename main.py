@@ -112,26 +112,26 @@ class YTDownloader(BoxLayout):
         outtmpl = f'{DOWNLOAD_DIR}/%(title)s.%(ext)s'
 
         ydl_opts = {
-            'outtmpl': outtmpl,
-            'quiet': True,
-            'progress_hooks': [self.hook]
-        }
+         'outtmpl': outtmpl,        
+         'quiet': True,
+         'progress_hooks': [self.hook],
+         'logger': YTDLogger(self.log)
+}
 
         if self.selected_format == 'mp4':
-            ydl_opts.update({
-                'format': 'bestvideo+bestaudio/best',
-                'merge_output_format': 'mp4'
-            })
+           ydl_opts.update({
+            'format': 'bestvideo+bestaudio/best',
+            'merge_output_format': 'mp4'
+    })
         else:  # mp3
-            ydl_opts.update({
-                'format': 'bestaudio',
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }]
-            })
-
+           ydl_opts.update({
+            'format': 'bestaudio',
+            'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }]
+    })
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
