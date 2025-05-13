@@ -20,7 +20,7 @@ jobs:
             ~/.buildozer/android/platform/android-sdk
             ~/.buildozer/android/platform/android-ndk
             ~/.buildozer/android/app/code_cache
-            .venv  # Cache the Python virtual environment
+            .venv
           key: Linux-buildozer-Linux-python-${hashFiles('**/buildozer.spec', 'requirements.txt')}
           restore-keys: |
             Linux-buildozer-Linux-python-
@@ -36,7 +36,7 @@ jobs:
           source .venv/bin/activate
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install -U Cython kivy-deps  # Ensure Kivy dependencies are installed
+          pip install -U Cython kivy-deps
           pip install buildozer
 
       - name: Build APK (Debug)
@@ -49,4 +49,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: package
-          path: ${{ steps.buildozer.outputs.apk_path }} # Use output from buildozer-action
+          path: ${{ steps.buildozer.outputs.apk_path }}
