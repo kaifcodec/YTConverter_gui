@@ -4,10 +4,10 @@
 title = YTconverter
 
 # (str) Package name
-package.name = com.ytconverter.kaifcodec
+package.name = ytconverter
 
 # (str) Package domain (needed for android/ios packaging)
-package.domain = org.kaifcodec.yt
+package.domain = org.kaifcodec
 
 # (str) Source code where the main.py live
 source.dir = .
