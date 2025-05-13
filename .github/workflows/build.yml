@@ -1,4 +1,4 @@
-name: Build APK
+Name: Build APK
 
 on:
   push:
@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache Buildozer, SDK, NDK, and Python Environment
+      - name: Cache Buildozer, SDK, and NDK
         uses: actions/cache@v4
         with:
           path: |
@@ -19,34 +19,21 @@ jobs:
             ~/.cache
             ~/.buildozer/android/platform/android-sdk
             ~/.buildozer/android/platform/android-ndk
+            # Add any custom directories where your binaries (ffmpeg, yt-dlp) are stored
             ~/.buildozer/android/app/code_cache
-            .venv
-          key: linux-buildozer-python-${{ hashFiles('**/buildozer.spec', 'requirements.txt') }}
+          key: Linux-buildozer-${{ runner.os }}-${{ hashFiles('**/buildozer.spec') }}
           restore-keys: |
-            linux-buildozer-python-
+            Linux-buildozer-${{ runner.os }}-
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Build APK
+        uses: digreatbrian/buildozer-action@v2
         with:
           python-version: 3.11
-
-      - name: Install Python Dependencies and Buildozer
-        run: |
-          python -m venv .venv
-          source .venv/bin/activate
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -U Cython
-          pip install buildozer
-
-      - name: Build APK (Debug)
-        run: |
-          source .venv/bin/activate
-          buildozer -v android debug
-        id: buildozer
+          buildozer-cmd: buildozer -v android debug
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: package
-          path: ${{ steps.buildozer.outputs.apk_path }}
+          path: ./bin/*.apk
+
